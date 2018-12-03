@@ -1,0 +1,411 @@
+CURD Operation in node js and Express.
+
+First you need to set up directory structure like this in project’s folder:
+
+.
+├── node_modules
+├── public
+  └── stylesheets
+    └── style.css
+├── package.json
+├── routes
+   └── index.js
+   └── user.js
+├── Views
+  └── index.ejs
+  └── layout.ejs
+  └── error.ejs
+  └── users.ejs
+  └── register.ejs
+  └── edit-user.ejs   
+├──models
+   └──users.js 
+└── app.js
+
+The site will be built using a few different tools (you don't need to know them already):
+
+Express.js, the most popular web framework in the Node.js ecosystem.
+express-session, a popular session management library. This is what will allow us to create and store cookies that remember who a user is.
+ejs, EJS is a simple templating language that lets you generate HTML markup with plain JavaScript.
+   
+ # Install the Tools
+ The first thing you need to do is install all the open source tools we'll be using to build this Node.js site.
+ 
+install the express-generator tool, which is the officially supported bootstrapping tool for quickly getting started with Express.js.
+
+    =>  npm install express-generator
+ 
+ Then, install express command for create a project.
+    
+    =>  express project_name
+
+Then, install  npm  for all dependencies for a project.
+   
+   =>  npm install
+   
+ Then, other dependencies are install for a project.
+ 
+   =>  npm ejs  (Embedded)
+   =>  npm  express-session
+   =>  npm  npm express bodyparser 
+   =>  npm install req-flash (use for a notification or messages ).
+    
+ Express/NodeJS Server File.
+ # Server.js 
+
+ var express = require('express');
+var path = require('path');
+var favicon = require('serve-favicon');
+var logger = require('morgan');
+var cookieParser = require('cookie-parser');
+var bodyParser = require('body-parser');
+
+var session = require('express-session');
+var flash = require('req-flash');
+
+var index = require('./routes/index');
+var users = require('./routes/users');
+
+var app = express();
+
+
+var mongoose = require('mongoose');
+mongoose.Promise = global.Promise;
+mongoose.connect('mongodb://127.0.0.1:27017/blog', { useMongoClient: true })
+.then(() => console.log('connection succesful'))
+.catch((err) => console.error(err));
+
+
+
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'ejs');
+
+
+app.use(logger('dev'));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.use(session({
+  secret: 'djhxcvxfgshajfgjhgsjhfgsakjeauytsdfy',
+  resave: false,
+  saveUninitialized: true
+  }));
+
+  app.use(flash());
+
+app.use('/', index);
+app.use('/users', users);
+
+
+app.listen(3000, function () {
+  console.log('Express app listening on port 3000');
+});
+module.exports = app;
+ 
+ Express/NodeJS models/ users.js File.
+ # models/users.js
+ 
+ var mongoose = require('mongoose');
+var Schema = mongoose.Schema,
+ObjectId = Schema.ObjectId;
+var User = new Schema({
+Id :String,    
+name :String,
+email :String,
+role :String,
+password :String
+});
+module.exports = mongoose.model('User', User);
+
+ Express/NodeJS public/stylesheets/style.css File.
+ # style.css
+ 
+ body {
+  padding: 50px;
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+a {
+  color: #00B7FF;
+}
+
+Express/NodeJS routes File.
+ # index.js
+ 
+ var express = require('express');
+var router = express.Router();
+
+/* GET home page. */
+router.get('/', function(req, res, next) {
+  res.render('index', { title: 'Express' });
+});
+
+module.exports = router;
+
+Express/NodeJS routes File.
+ # users.js
+ 
+ var express = require('express');
+var router = express.Router();
+
+var User = require('../schema/user');
+
+/* GET home page. */
+router.get('/', function(req, res) {
+  User.find({role: { $ne: 1 }}, function(err, users) {
+    if (err) {
+      console.log(err);
+    } else {
+      res.render('users', { successMsg: req.flash('successMsg'),errorMsg: req.flash('errorMsg'), users: users });
+    }
+}); 
+});
+
+
+/* GET register page. */
+router.get('/register', function(req, res) {
+    res.render('register', { title: 'Register' });
+});
+
+/* REGISTER USER. */
+router.post('/register', function(req, res) {
+  var data = new User(req.body);
+  data.save(function(err){
+   if(err){
+    res.render('register', { message: 'Invalid request!' });
+   }else{
+    res.render('register', { message: 'User registered successfully!'});
+   } 
+  })
+ });
+
+
+
+  /* GET SINGLE User BY ID */
+router.get('/edit/:id', function(req, res) {
+  User.findById(req.params.id, function (err, user) {
+    if (err) {
+      console.log(err);
+    } else {
+      res.render('edit-user', { errorMsg: req.flash('errorMsg'),successMsg: req.flash('successMsg'), userDetail: user });
+    }
+  });
+});
+
+/* UPDATE User */
+router.post('/edit/:id', function(req, res) {
+  User.findByIdAndUpdate(req.params.id, req.body, function (err) {
+    if(err){
+      req.flash('errorMsg', 'Something went wrong! User could not updated.');
+      res.redirect('/users/edit/'+req.params.id);
+  } else {
+    req.flash('successMsg', 'User updated successfully.');
+    res.redirect('/users/edit/'+req.params.id);
+  }
+  });
+});
+
+
+ /* DELETE User BY ID */
+router.get('/destroy/:id', function(req, res) {
+  User.findByIdAndRemove(req.params.id, function (err, project) {
+    if (err) {
+      req.flash('errorMsg', 'User not deleted successfully.');
+      res.redirect('/users');
+    } else {
+      req.flash('successMsg', 'User deleted successfully.');
+      res.redirect('/users');
+    }
+  });
+});
+
+module.exports = router;
+
+Express/NodeJS views File.
+ # index.ejs
+ 
+  welcome to CURD operation.
+ 
+ # error.ejs
+ 
+   error
+ 
+ # layout.ejs
+ 
+   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+ 
+ # users.ejs
+ 
+ <% include layout %>
+
+<% if (typeof successMsg != 'undefined' && successMsg) { %>
+    <div class="alert alert-success"><%- successMsg %></div>
+    <% } else if(typeof errorMsg != 'undefined' && errorMsg) { %>
+            <div class="alert alert-danger"><%- errorMsg %></div>
+            <% } %>
+  <section name="content">
+    <div class="container">
+    <h5 class="text-center"><a href="/users/register">Add New User</a></h5>
+    <table class="table table-striped">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th> Id</th>
+                        <th>User Name</th>
+                        <th>Email Id</th>
+                        <th>Role</th>
+                        
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                                    <% 
+                                    if (typeof users != 'undefined' && users.length > 0) { 
+                                            var srNo = 0;
+                                            users.forEach( function ( user ){
+                                                    srNo = srNo + 1;
+                                                    %>
+                                    <tr>
+                                                    <th scope="row"><%= srNo %></th>
+                                            <td><%= user.Id %></td>
+                                            <td><%= user.name %></td>
+                                            <td><%= user.email %></td>
+                                            <td><% if (user.role==2) { %>Teacher<% } else if(user.role==3) { %> Students <% } %></td>
+                                            
+                                            <td>
+                                                            <a href="/users/edit/<%= user._id %>" title="Edit User"><button class="btn btn-primary">Edit</button></a>
+                                                            <a href="/users/destroy/<%= user._id %>" title="Delete User"><button class="btn btn-danger">Delete</button></a>
+                                           
+                                            </td>
+                                          </tr>
+                                    <% });
+                                    }
+                                   else {  %>
+                                      <tr><td colspan="6"> No Data </td></tr>
+                                    <% } %>
+                    </tbody>
+                  </table>
+    </div>
+   </section>
+ 
+ # register.ejs
+ 
+ <% include layout %>
+
+
+<section name="content">
+    <div class="container">
+<% if (typeof message != 'undefined' && message) { %>
+<h2><%= message %></h2>
+<% } %>
+<form class="form-horizontal" role="form" method="post" action="/users/register">
+   
+    <div class="form-group">
+            <label for="email" class="col-sm-2 control-label"> Id</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" id="Id" name="Id" placeholder=" Id">
+            </div>
+        </div>
+
+        <div class="form-group">
+                <label for="email" class="col-sm-2 control-label">Role</label>
+                <div class="col-sm-10">
+                    <select name="role" class="form-control">
+                        <option value="">Select Role</option>
+                        <option value="2">Teacher</option>
+                        <option value="3">Students</option>
+                        </select>
+                </div>
+            </div>
+
+    <div class="form-group">
+        <label for="email" class="col-sm-2 control-label">Name</label>
+        <div class="col-sm-10">
+            <input type="text" class="form-control" id="name" name="name" placeholder="Name">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="email" class="col-sm-2 control-label">Email</label>
+        <div class="col-sm-10">
+            <input type="email" class="form-control" id="email" name="email" placeholder="example@domain.com">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="email" class="col-sm-2 control-label">Password</label>
+        <div class="col-sm-10">
+            <input type="password" class="form-control" id="password" name="password" placeholder="Password">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <div class="col-sm-10 col-sm-offset-2">
+            <input id="submit" name="submit" type="submit" value="Register" class="btn btn-primary">
+        </div>
+    </div>
+    
+</form>
+    </div>
+    </section>
+	
+	
+ # edit-user.ejs
+ 
+ <% include layout %>
+
+<section name="content">
+    <div class="container">
+            <% if (typeof successMsg != 'undefined' && successMsg) { %>
+                <div class="alert alert-success"><%- successMsg %></div>
+                <% } else if(typeof errorMsg != 'undefined' && errorMsg) { %>
+                        <div class="alert alert-danger"><%- errorMsg %></div>
+                        <% } %>
+<form class="form-horizontal" role="form" method="post" action="">
+   
+    <div class="form-group">
+            <label for="email" class="col-sm-2 control-label"> Id</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" id="Id" name="Id" placeholder=" Id" value="<% if (typeof userDetail != 'undefined') { %><%= userDetail.Id %><% } %>">
+            </div>
+        </div>
+
+        <div class="form-group">
+                <label for="email" class="col-sm-2 control-label">Role</label>
+                <div class="col-sm-10">
+                    <select name="role" class="form-control">
+                        <option value="">Select Role</option>
+                        <option value="2" <% if (typeof userDetail != 'undefined' && userDetail.role==2) { %>Selected<% } %>>Teacher</option>
+                        <option value="3" <% if (typeof userDetail != 'undefined' && userDetail.role==3) { %>Selected<% } %>>Students</option>
+                        </select>
+                </div>
+            </div>
+
+    <div class="form-group">
+        <label for="email" class="col-sm-2 control-label">Name</label>
+        <div class="col-sm-10">
+            <input type="text" class="form-control" id="name" name="name" placeholder="Name" value="<% if (typeof userDetail != 'undefined') { %><%= userDetail.name %><% } %>">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="email" class="col-sm-2 control-label">Email</label>
+        <div class="col-sm-10">
+            <input type="email" class="form-control" id="email" name="email" placeholder="example@domain.com" value="<% if (typeof userDetail != 'undefined') { %><%= userDetail.email %><% } %>">
+        </div>
+    </div>
+
+  
+    
+    <div class="form-group">
+        <div class="col-sm-10 col-sm-offset-2">
+            <input id="submit" name="submit" type="submit" value="Register" class="btn btn-primary">
+        </div>
+    </div>
+    
+</form>
+    </div>
+    </section>
