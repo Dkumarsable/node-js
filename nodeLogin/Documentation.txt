@@ -1,0 +1,276 @@
+﻿Register and Login page in Node js and Express.
+
+First you need to set up directory structure like this in project’s folder:
+
+.
+├── node_modules
+├── modles
+├── package.json
+├── routes
+│ └── index.js
+├── Views
+  └── index.ejs
+  └── login.ejs
+  └── CSS
+    └── main.css
+├── DataBase.js
+└── server.js
+
+
+The site will be built using a few different tools (you don't need to know them already):
+
+Express.js, the most popular web framework in the Node.js ecosystem.
+express-session, a popular session management library. This is what will allow us to create and store cookies that remember who a user is.
+ejs, EJS is a simple templating language that lets you generate HTML markup with plain JavaScript.
+   
+ # Install the Tools
+ The first thing you need to do is install all the open source tools we'll be using to build this Node.js site.
+ 
+install the express-generator tool, which is the officially supported bootstrapping tool for quickly getting started with Express.js.
+
+    =>  npm install express-generator
+ 
+ Then, install express command for create a project.
+    
+    =>  express project_name
+
+Then, install  npm  for all dependencies for a project.
+   
+   =>  npm install
+   
+ Then, other dependencies are install for a project.
+ 
+   =>  npm ejs  (Embedded)
+   =>  npm  express-session
+   =>  npm  npm express bodyparser
+  
+  
+  Express/NodeJS Server File.
+ # Server.js  
+
+var express = require('express');
+var ejs = require('ejs');
+var path = require('path');
+var app = express();
+var bodyParser = require('body-parser');
+var mongoose   = require('./database');
+
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'ejs');	
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
+
+app.use(express.static(__dirname + '/views'));
+
+var index = require('./routes/index');
+app.use('/', index);
+
+app.listen(3000, function () {
+  console.log('Express app listening on port 3000');
+}); 
+   
+   Express/NodeJS Register View.
+ # views/index.ejs
+
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Home page</title>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<link rel="stylesheet" href="./css/main.css">
+
+</head>
+<body>
+
+	<div class="col-md-4 col-md-offset-4">
+		<div>
+			<p>Register Now
+			</p>
+		</div>
+		<div class="form-group">
+			<form id="form1" method="post">
+				<input type="email" name="email" placeholder="E-mail" required="" class="form-control"><br/>
+				<input type="text" name="username" placeholder="Username" required="" class="form-control"><br/>
+				<input type="password" name="password" placeholder="Password" required="" class="form-control"><br/>
+				<input type="password" name="passwordConf" placeholder="Confirm Password" required="" class="form-control"><br/>
+				<input type="submit" value="Register" class="btn btn-success">
+			</form>
+		</div>
+		
+		<div class="mssg bg-danger">
+			<span id="check"></span>
+		</div>
+		<div>
+			<span>Already Registered! <a href="/login">Login</a></span>
+		</div>
+		<div id="LangTable"><a href="/login" id="aa"></a>
+		</div>
+	</div>
+</body>
+</html>
+
+ Express/NodeJS login View.
+ # views/login.ejs
+ 
+ <!DOCTYPE html>
+<html>
+<head>
+	<title>Login</title>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<link rel="stylesheet" href="./css/main.css">
+
+</head>
+<body>
+	<div class="col-md-4 col-md-offset-4">
+		<div>
+			<p>Login</p>
+		</div>
+		<div class="form-group">
+			<form id="form" method="post" >
+				<input type="text" name="email" placeholder="E-mail" required="" class="form-control"><br/>
+				<input type="password" name="password" placeholder="Password" required="" class="form-control"><br/>
+				<input type="submit" value="Login" class="btn btn-success">
+			</form>
+		</div>
+		<div class="mssg bg-danger">
+			<span id="check" ></span>
+		</div>
+		<div id="LangTable"><a href="/profile" id="aa"></a>
+		</div>
+		
+	</div>
+</body>
+</html>
+
+   Express/NodeJS CSS File.
+ # css/main.css
+
+/*body,
+ table,
+    thead,
+    tr,
+    tbody,
+    th,
+    td {
+        text-align: center;
+    }*/
+body{
+	
+}
+p{
+	margin-top: 20px;
+	font-size: 30px;
+}
+
+.mssg{
+	margin-top: 5px;
+	margin-bottom: 5px;
+	border-radius: 5px;
+}
+
+  Express/NodeJS Models File.
+  # models/ user.js
+
+var mongoose = require('mongoose');
+var Schema = mongoose.Schema;
+
+userSchema = new Schema( {
+	email: String,
+	username: String,
+	password: String,
+	passwordConf: String
+}),
+User = mongoose.model('User', userSchema);
+
+module.exports = User;
+   
+   Express/NodeJS Routes File.
+ # routes/ index.js
+ 
+ var express = require('express');
+var router = express.Router();
+var User = require('../models/user');
+
+
+router.get('/', function (req, res, next) {
+	return res.render('index.ejs');
+});
+
+router.get('/login', function (req, res, next) {
+	return res.render('login.ejs');
+});
+
+router.post('/', function(req, res, next) {
+
+	if(!req.body.email || !req.body.username || !req.body.password || !req.body.passwordConf){
+		res.send();
+	} else {
+		if (req.body.password == req.body.passwordConf) {
+
+			User.findOne({email:req.body.email},function(err,data){
+				if(!data){
+					User.findOne({},function(err,data){
+
+						var newPerson = new User({
+							email:req.body.email,
+							username: req.body.username,
+							password: req.body.password,
+							passwordConf: req.body.passwordConf
+						});
+
+						newPerson.save(function(err, Person){
+							if(err)
+								console.log(err);
+							else
+								console.log('Success');
+						});
+
+					}).sort({_id: -1}).limit(1);
+					res.send({"Success":"You are regestered ."});
+				}else{
+					res.send({"Success":"Email is already used."});
+				}
+
+			});
+		}else{
+			 
+			res.send({"Success":"password is not matched"});
+		}
+	}
+});
+
+router.post('/login', function (req, res, next) {
+	
+	User.findOne({email:req.body.email},function(err,data){
+		if(data){
+			
+			if(data.password==req.body.password){
+				
+				res.send({"Success":"Success!"});
+				
+			}else{
+				res.send({"Success":"Wrong password!"});
+			}
+		}else{
+			res.send({"Success":"This Email Is not regestered!"});
+		}
+	});
+});
+
+module.exports = router;
+ 
+  # Start up your server from your terminal by running:
+ 
+   => node app.js
+   
+   Point your browser to http://localhost:3000 and you should see your new app.
+  
+  
+   
+   
+	
+	
