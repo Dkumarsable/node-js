@@ -1,0 +1,8 @@
+Creating a Simple RESTful Web App with Node.js, Express, and MongoDB.
+(Learn the basics of REST and use them to build an easy, fast, single-page web app.)
+
+run npm start anhd mongo
+
+use nodetest2
+
+db.userlist.insert({'username' : 'test1','email' : 'test1@test.com','fullname' : 'Bob Smith','age' : 27,'location' : 'San Francisco','gender' : 'Male'})
